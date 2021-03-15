@@ -2,7 +2,7 @@ import { AgGridReact, AgGridReactProps } from "ag-grid-react";
 import { GridApi, GridReadyEvent } from "ag-grid-community";
 import React, { useEffect, useState } from "react";
 
-import { useDebounce } from "./useDebounce";
+import { useContainerWidth } from "./useContainerWidth";
 import { useWindowSize } from "./useWindowSize";
 
 export function AgGridAutoResizeToContainer({
@@ -12,23 +12,13 @@ export function AgGridAutoResizeToContainer({
   ...props
 }: AgGridReactProps & { theme?: string; debounce?: number }) {
   const [gridApi, setGridApi] = useState<GridApi | undefined>();
-  const [size, setSize] = useState<number | undefined>();
-  const gridContainer = (element: HTMLDivElement) =>
-    element && setSize(element.getBoundingClientRect().width);
-  const debounceResize = useDebounce(size, debounce);
   const [windowWidth] = useWindowSize(debounce);
-
+  const {width: containerWidth, ref} = useContainerWidth(debounce);
   useEffect(() => {
     if (gridApi) {
       gridApi.sizeColumnsToFit();
     }
-  }, [windowWidth, gridApi]);
-
-  useEffect(() => {
-    if (gridApi && debounceResize) {
-      gridApi.sizeColumnsToFit();
-    }
-  }, [debounceResize, gridApi]);
+  }, [windowWidth, containerWidth, gridApi]);
 
   function handleGridReady(event: GridReadyEvent) {
     if (onGridReady) {
@@ -40,7 +30,7 @@ export function AgGridAutoResizeToContainer({
   return (
     <div
       className={theme}
-      ref={gridContainer}
+      ref={ref}
       style={{ width: "100%", height: "100%" }}
     >
       <AgGridReact onGridReady={handleGridReady} {...props} />
